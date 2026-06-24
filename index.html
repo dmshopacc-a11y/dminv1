@@ -91,7 +91,7 @@
         /* MAIN SYSTEM CONTAINER VISIBILITY       */
         /* -------------------------------------- */
         #mainSystem {
-            display: none; /* នឹងបង្ហាញក្រោយពេល Login ជោគជ័យ */
+            display: none; 
         }
 
         /* Tabs Navigation */
@@ -339,9 +339,6 @@
     <div id="invoiceTab" class="tab-content active">
         <div class="action-bar">
             <button class="btn btn-save" onclick="saveInvoiceData()">💾 រក្សាទុកទិន្នន័យ (Save)</button>
-            <button class="btn" style="background-color: #341f97;" onclick="exportDataToJSON()">📤 ទាញទិន្នន័យទុក (Backup)</button>
-            <button class="btn" style="background-color: #54a0ff;" onclick="document.getElementById('importFile').click()">📥 បញ្ចូលទិន្នន័យ (Restore)</button>
-            <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importDataFromJSON(this)">
             <button class="btn btn-print" onclick="window.print()">🖨️ បោះពុម្ពវិក្កយបត្រ / PDF</button>
         </div>
 
@@ -534,6 +531,16 @@
     let qrcodeObj = null;
 
     // -------------------------------------- //
+    // GITHUB API CONFIGURATION (UPDATED)     //
+    // -------------------------------------- //
+    const GITHUB_TOKEN = "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"; 
+    const GITHUB_USER  = "dmshopacc-a11y";                    
+    const GITHUB_REPO  = "dminv1";                    
+    const FILE_PATH    = "data.json";                                  
+
+    const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
+    // -------------------------------------- //
     // JAVASCRIPT AUTHENTICATION LOGIC        //
     // -------------------------------------- //
     function handleLogin(e) {
@@ -541,7 +548,6 @@
         let user = document.getElementById('loginUser').value.trim();
         let pass = document.getElementById('loginPass').value;
 
-        // កំណត់គណនីផ្ទាល់ខ្លួនរបស់អ្នក (dm / K@llasero097)
         if (user === 'dm' && pass === 'K@llasero097') {
             sessionStorage.setItem('dm_session_user', 'dm');
             checkSession();
@@ -558,7 +564,6 @@
             document.getElementById('mainSystem').style.display = 'block';
             document.getElementById('currentUserLabel').innerText = sessionUser;
             
-            // ដំណើរការទិន្នន័យប្រព័ន្ធ
             generateInvoiceDetails();
             updateProductDropdowns();
             renderProductDBList();
@@ -571,7 +576,7 @@
     }
 
     function handleLogout() {
-        if(confirm("តើអ្នកពិតជាចង់ចាកចេញពីប្រព័ន្ធមែនទេ?")) {
+        if(confirm("តើអ្នកពិតជាចង់លុបចាកចេញពីប្រព័ន្ធមែនទេ?")) {
             sessionStorage.removeItem('dm_session_user');
             checkSession();
         }
@@ -602,6 +607,8 @@
     }
 
     function updateInvoiceQR() {
+        if (typeof QRCode === 'undefined') return;
+        
         let invNum = document.getElementById('invoiceNum').innerText.trim();
         let totalAmount = document.getElementById('grandTotal').innerText.trim();
         let qrContainer = document.getElementById('invoiceQrCode');
@@ -644,7 +651,6 @@
         setTimeout(updateInvoiceQR, 200);
     }
 
-    // ចាប់ដំណើរការប្រព័ន្ធពិនិត្យ Session ពេលបើកទំព័រដំបូង
     window.onload = function() {
         checkSession();
     };
@@ -783,51 +789,6 @@
         }
     }
 
-    // -------------------------------------- //
-    // បានបន្ថែមមុខងារ BACKUP & RESTORE JSON    //
-    // -------------------------------------- //
-    function exportDataToJSON() {
-        let invoices = localStorage.getItem('dm_invoices');
-        let products = localStorage.getItem('dm_products_v4');
-
-        if(!invoices && !products) return alert("គ្មានទិន្នន័យសម្រាប់ទាញចេញឡើយ!");
-
-        let backupData = {
-            invoices: invoices ? JSON.parse(invoices) : [],
-            products: products ? JSON.parse(products) : []
-        };
-
-        let blob = new Blob([JSON.stringify(backupData, null, 2)], {type: "application/json"});
-        let a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `DM_Invoice_Backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-    }
-
-    function importDataFromJSON(input) {
-        let file = input.files[0];
-        if (!file) return;
-
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                let data = JSON.parse(e.target.result);
-                if (data.invoices || data.products) {
-                    if (data.invoices) localStorage.setItem('dm_invoices', JSON.stringify(data.invoices));
-                    if (data.products) localStorage.setItem('dm_products_v4', JSON.stringify(data.products));
-                    
-                    alert("🔄 បានបញ្ចូលទិន្នន័យជោគជ័យ! វែបសាយនឹងរៀបចំឡើងវិញ...");
-                    location.reload();
-                } else {
-                    alert("ហ្វាយនេះមិនមានទម្រង់ទិន្នន័យត្រឹមត្រូវឡើយ!");
-                }
-            } catch (err) {
-                alert("ការអានហ្វាយមានបញ្ហា: " + err.message);
-            }
-        };
-        reader.readAsText(file);
-    }
-
     function addRow() {
         let table = document.getElementById("invoiceTable").getElementsByTagName('tbody')[0];
         let rowCount = table.rows.length;
@@ -875,7 +836,25 @@
         updateInvoiceQR(); 
     }
 
-    function saveInvoiceData() {
+    // -------------------------------------- //
+    // GITHUB INTERACTION FUNCTIONS           //
+    // -------------------------------------- //
+    async function getInvoicesFromGitHub() {
+        try {
+            let res = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
+                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            });
+            if(!res.ok) return { invoices: [], sha: null };
+            let fileData = await res.json();
+            let parsedData = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
+            return { invoices: parsedData, sha: fileData.sha };
+        } catch (error) {
+            console.error("Error fetching from GitHub:", error);
+            return { invoices: [], sha: null };
+        }
+    }
+
+    async function saveInvoiceData() {
         let invNum = document.getElementById('invoiceNum').innerText.trim();
         let invDate = document.getElementById('currentDate').innerText;
         let amount = document.getElementById('grandTotal').innerText.replace('$', '');
@@ -891,9 +870,6 @@
             itemsSaved.push({ productName: select.value, qty: qty, price: price });
         });
 
-        let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
-        let existingIndex = savedInvoices.findIndex(inv => inv.invoiceNum === invNum);
-        
         let invoiceData = { 
             invoiceNum: invNum, 
             date: invDate, 
@@ -902,30 +878,60 @@
             items: itemsSaved
         };
 
-        if(existingIndex > -1) {
-            savedInvoices[existingIndex] = invoiceData;
-        } else {
-            savedInvoices.push(invoiceData);
-        }
+        try {
+            let { invoices, sha } = await getInvoicesFromGitHub();
+            let existingIndex = invoices.findIndex(inv => inv.invoiceNum.toString() === invNum.toString());
+            
+            if(existingIndex > -1) {
+                invoices[existingIndex] = invoiceData;
+            } else {
+                invoices.push(invoiceData);
+            }
 
-        localStorage.setItem('dm_invoices', JSON.stringify(savedInvoices));
-        alert("រក្សាទុកវិក្កយបត្រលេខ #" + invNum + " រួចរាល់!");
-        renderInvoiceHistory();
-        resetInvoiceForm();
+            let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+
+            let putRes = await fetch(API_URL, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: `🤖 Updated invoice #${invNum} via Web System`,
+                    content: updatedContent,
+                    sha: sha
+                })
+            });
+
+            if(putRes.ok) {
+                alert("រក្សាទុកវិក្កយបត្រលេខ #" + invNum + " ទៅកាន់ GitHub រួចរាល់!");
+                await renderInvoiceHistory();
+                resetInvoiceForm();
+            } else {
+                let errData = await putRes.json();
+                alert("រក្សាទុកបរាជ័យ: " + errData.message);
+            }
+        } catch (error) {
+            alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅ GitHub: " + error.message);
+        }
     }
 
-    function renderInvoiceHistory() {
-        let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
+    async function renderInvoiceHistory() {
         let tbody = document.getElementById('historyTableBody');
         if(!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #666; padding: 15px;">កំពុងទាញទិន្នន័យពី GitHub...</td></tr>';
+
+        let { invoices } = await getInvoicesFromGitHub();
         tbody.innerHTML = '';
 
-        if(savedInvoices.length === 0) {
+        if(invoices.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 15px;">មិនទាន់មានវិក្កយបត្របានរក្សាទុកឡើយ។</td></tr>';
             return;
         }
 
-        savedInvoices.forEach((inv, index) => {
+        let displayList = [...invoices].reverse();
+
+        displayList.forEach((inv, index) => {
             let row = document.createElement('tr');
             row.innerHTML = '<td class="text-center">' + (index + 1) + '</td>' +
                 '<td class="text-center">' + inv.date + '</td>' +
@@ -940,9 +946,9 @@
         });
     }
 
-    function viewSavedInvoice(invNum) {
-        let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
-        let inv = savedInvoices.find(item => item.invoiceNum === invNum);
+    async function viewSavedInvoice(invNum) {
+        let { invoices } = await getInvoicesFromGitHub();
+        let inv = invoices.find(item => item.invoiceNum.toString() === invNum.toString());
         
         if(!inv) return alert("រកមិនឃើញវិក្កយបត្រនេះទេ!");
 
@@ -978,17 +984,41 @@
 
         calculateTotal();
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        alert("បានទាញយកវិក្កយបត្រលេខ #" + invNum + " មកបង្ហាញជោគជ័យ! លោកអ្នកអាចកែប្រែ ឬបោះពុម្ពបាន។");
+        alert("បានទាញយកវិក្កយបត្រលេខ #" + invNum + " ពី GitHub មកបង្ហាញជោគជ័យ!");
     }
 
-    function deleteInvoiceFromHistory(invNum) {
-        if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះចេញពីប្រព័ន្ធមែនទេ?")) {
-            let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
-            savedInvoices = savedInvoices.filter(inv => inv.invoiceNum !== invNum);
-            localStorage.setItem('dm_invoices', JSON.stringify(savedInvoices));
-            renderInvoiceHistory();
-            if(document.getElementById('invoiceNum').innerText === invNum) {
-                resetInvoiceForm();
+    async function deleteInvoiceFromHistory(invNum) {
+        if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះចេញពី GitHub មែនទេ?")) {
+            try {
+                let { invoices, sha } = await getInvoicesFromGitHub();
+                invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
+
+                let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+
+                let putRes = await fetch(API_URL, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${GITHUB_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `🤖 Deleted invoice #${invNum} via Web System`,
+                        content: updatedContent,
+                        sha: sha
+                    })
+                });
+
+                if(putRes.ok) {
+                    alert("បានលុបវិក្កយបត្រជោគជ័យ!");
+                    await renderInvoiceHistory();
+                    if(document.getElementById('invoiceNum').innerText === invNum) {
+                        resetInvoiceForm();
+                    }
+                } else {
+                    alert("ការលុបបរាជ័យ!");
+                }
+            } catch (error) {
+                alert("មានបញ្ហា៖ " + error.message);
             }
         }
     }
@@ -1013,15 +1043,17 @@
         calculateTotal();
     }
 
-    function loadStatement() {
-        let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
+    async function loadStatement() {
         let tbody = document.getElementById('statementBody');
         if(!tbody) return;
         
-        tbody.innerHTML = '';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #666; padding: 15px;">កំពុងទាញទិន្នន័យរបាយការណ៍...</td></tr>';
         let grandTotal = 0;
 
-        let filteredInvoices = savedInvoices.filter(inv => {
+        let { invoices } = await getInvoicesFromGitHub();
+        tbody.innerHTML = '';
+
+        let filteredInvoices = invoices.filter(inv => {
             if (!inv.customer) return false;
             let name = inv.customer.toUpperCase().replace(/[\s,.]/g, "");
             return name.includes("TRIPOS");
@@ -1048,12 +1080,36 @@
         document.getElementById('statementGrandTotal').innerText = '$' + grandTotal.toFixed(2);
     }
 
-    function deleteStatementRow(invNum) {
+    async function deleteStatementRow(invNum) {
         if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះមែនទេ?")) {
-            let savedInvoices = JSON.parse(localStorage.getItem('dm_invoices')) || [];
-            savedInvoices = savedInvoices.filter(inv => inv.invoiceNum !== invNum);
-            localStorage.setItem('dm_invoices', JSON.stringify(savedInvoices));
-            loadStatement();
+            try {
+                let { invoices, sha } = await getInvoicesFromGitHub();
+                invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
+
+                let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+
+                let putRes = await fetch(API_URL, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${GITHUB_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `🤖 Deleted invoice #${invNum} via Statement Tab`,
+                        content: updatedContent,
+                        sha: sha
+                    })
+                });
+
+                if(putRes.ok) {
+                    alert("បានលុបចេញពីប្រព័ន្ធជោគជ័យ!");
+                    await loadStatement();
+                } else {
+                    alert("ប្រតិបត្តិការបរាជ័យ!");
+                }
+            } catch (error) {
+                alert("មានបញ្ហា៖ " + error.message);
+            }
         }
     }
 </script>
