@@ -53,6 +53,12 @@
             outline: none;
             border-color: #2e86de;
         }
+        .token-hint {
+            font-size: 11px;
+            color: #e67e22;
+            margin-top: -5px;
+            line-height: 1.4;
+        }
         .btn-auth {
             background-color: #2e86de;
             color: white;
@@ -320,6 +326,10 @@
         <label>លេខសម្ងាត់ (Password)</label>
         <input type="password" id="loginPass" required placeholder="បញ្ចូល លេខសម្ងាត់...">
         
+        <label style="color: #2e86de;">🔑 GitHub Access Token (Classic)</label>
+        <input type="password" id="loginToken" required placeholder="បិទភ្ជាប់លេខ ghp_... ថ្មីរបស់អ្នកនៅទីនេះ">
+        <div class="token-hint">* សម្គាល់៖ ការបំពេញ Token ត្រង់នេះជួយការពារកុំឱ្យប្រព័ន្ធ GitHub ប្លុកលេខកូដរបស់អ្នកចោល។</div>
+        
         <button type="submit" class="btn-auth">ឡូកអ៊ីន (Login)</button>
     </form>
 </div>
@@ -531,14 +541,19 @@
     let qrcodeObj = null;
 
     // -------------------------------------- //
-    // GITHUB API CONFIGURATION (STABLE)      //
+    // GITHUB API CONFIGURATION               //
     // -------------------------------------- //
-    const GITHUB_TOKEN = "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"; 
     const GITHUB_USER  = "dmshopacc-a11y";                    
     const GITHUB_REPO  = "dminv1";                    
     const FILE_PATH    = "data.json";                                  
 
-    const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+    function getApiUrl() {
+        return `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+    }
+
+    function getActiveToken() {
+        return sessionStorage.getItem('dm_github_token') || "";
+    }
 
     // -------------------------------------- //
     // JAVASCRIPT AUTHENTICATION LOGIC        //
@@ -547,9 +562,15 @@
         e.preventDefault();
         let user = document.getElementById('loginUser').value.trim();
         let pass = document.getElementById('loginPass').value;
+        let token = document.getElementById('loginToken').value.trim();
 
         if (user === 'dm' && pass === 'K@llasero097') {
+            if(!token.startsWith("ghp_")) {
+                alert("សូមពិនិត្យមើលឡើងវិញ! GitHub Token ត្រូវតែចាប់ផ្ដើមដោយអក្សរ ghp_");
+                return;
+            }
             sessionStorage.setItem('dm_session_user', 'dm');
+            sessionStorage.setItem('dm_github_token', token);
             checkSession();
             alert("ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ!");
         } else {
@@ -559,7 +580,9 @@
 
     function checkSession() {
         let sessionUser = sessionStorage.getItem('dm_session_user');
-        if(sessionUser === 'dm') {
+        let token = getActiveToken();
+
+        if(sessionUser === 'dm' && token) {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainSystem').style.display = 'block';
             document.getElementById('currentUserLabel').innerText = sessionUser;
@@ -577,7 +600,7 @@
 
     function handleLogout() {
         if(confirm("តើអ្នកពិតជាចង់លុបចាកចេញពីប្រព័ន្ធមែនទេ?")) {
-            sessionStorage.removeItem('dm_session_user');
+            sessionStorage.clear();
             checkSession();
         }
     }
@@ -650,10 +673,6 @@
 
         setTimeout(updateInvoiceQR, 200);
     }
-
-    window.onload = function() {
-        checkSession();
-    };
 
     function switchTab(tabId) {
         document.getElementById('invoiceTab').classList.remove('active');
@@ -839,20 +858,33 @@
     // -------------------------------------- //
     // GITHUB INTERACTION FUNCTIONS           //
     // -------------------------------------- //
+    function decodeBase64GitHub(content) {
+        return JSON.parse(decodeURIComponent(escape(atob(content.replace(/\s/g, '')))));
+    }
+
+    function encodeBase64GitHub(obj) {
+        return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
+    }
+
     async function getInvoicesFromGitHub() {
+        let token = getActiveToken();
         try {
-            let res = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
-                headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+            let res = await fetch(`${getApiUrl()}?t=${new Date().getTime()}`, {
+                headers: { "Authorization": `token ${token}` }
             });
             
-            // ប្រសិនបើរកមិនឃើញហ្វាយ data.json (Error 404) វានឹងបង្កើត Array ទំនេរមកជំនួស
             if (res.status === 404) {
                 return { invoices: [], sha: null };
             }
             
-            if(!res.ok) return { invoices: [], sha: null };
+            if(!res.ok) {
+                if(res.status === 401 || res.status === 403) {
+                    alert("🔴 ព័ត៌មានកំហុស៖ លេខ GitHub Token របស់អ្នកមិនត្រឹមត្រូវ ហួសកំណត់ ឬត្រូវបានប្លុកហើយ! សូមបង្កើត Token ថ្មីមកដាក់។");
+                }
+                return { invoices: [], sha: null };
+            }
             let fileData = await res.json();
-            let parsedData = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
+            let parsedData = decodeBase64GitHub(fileData.content);
             return { invoices: parsedData, sha: fileData.sha };
         } catch (error) {
             console.error("Error fetching from GitHub:", error);
@@ -861,6 +893,7 @@
     }
 
     async function saveInvoiceData() {
+        let token = getActiveToken();
         let invNum = document.getElementById('invoiceNum').innerText.trim();
         let invDate = document.getElementById('currentDate').innerText;
         let amount = document.getElementById('grandTotal').innerText.replace('$', '');
@@ -894,34 +927,33 @@
                 invoices.push(invoiceData);
             }
 
-            let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+            let updatedContent = encodeBase64GitHub(invoices);
 
             let requestBody = {
                 message: `🤖 Updated invoice #${invNum} via Web System`,
                 content: updatedContent
             };
             
-            // ប្រសិនបើមានហ្វាយចាស់ ត្រូវភ្ជាប់ SHA ទៅជាមួយទើបអាចកែបាន
             if (sha) {
                 requestBody.sha = sha;
             }
 
-            let putRes = await fetch(API_URL, {
+            let putRes = await fetch(getApiUrl(), {
                 method: "PUT",
                 headers: {
-                    "Authorization": `token ${GITHUB_TOKEN}`,
+                    "Authorization": `token ${token}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(requestBody)
             });
 
             if(putRes.ok) {
-                alert("រក្សាទុកវិក្កយបត្រលេខ #" + invNum + " ទៅកាន់ GitHub រួចរាល់!");
+                alert("💾 រក្សាទុកវិក្កយបត្រលេខ #" + invNum + " ទៅកាន់ GitHub រួចរាល់!");
                 await renderInvoiceHistory();
                 resetInvoiceForm();
             } else {
                 let errData = await putRes.json();
-                alert("រក្សាទុកបរាជ័យ: " + errData.message);
+                alert("🔴 រក្សាទុកបរាជ័យ៖ " + errData.message + " (Code: " + putRes.status + ")");
             }
         } catch (error) {
             alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅ GitHub: " + error.message);
@@ -1002,15 +1034,16 @@
     async function deleteInvoiceFromHistory(invNum) {
         if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះចេញពី GitHub មែនទេ?")) {
             try {
+                let token = getActiveToken();
                 let { invoices, sha } = await getInvoicesFromGitHub();
                 invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
 
-                let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+                let updatedContent = encodeBase64GitHub(invoices);
 
-                let putRes = await fetch(API_URL, {
+                let putRes = await fetch(getApiUrl(), {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${GITHUB_TOKEN}`,
+                        "Authorization": `token ${token}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -1101,15 +1134,16 @@
     async function deleteStatementRow(invNum) {
         if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះមែនទេ?")) {
             try {
+                let token = getActiveToken();
                 let { invoices, sha } = await getInvoicesFromGitHub();
                 invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
 
-                let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
+                let updatedContent = encodeBase64GitHub(invoices);
 
-                let putRes = await fetch(API_URL, {
+                let putRes = await fetch(getApiUrl(), {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${GITHUB_TOKEN}`,
+                        "Authorization": `token ${token}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
