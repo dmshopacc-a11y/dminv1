@@ -531,7 +531,7 @@
     let qrcodeObj = null;
 
     // -------------------------------------- //
-    // GITHUB API CONFIGURATION (UPDATED)     //
+    // GITHUB API CONFIGURATION (STABLE)      //
     // -------------------------------------- //
     const GITHUB_TOKEN = "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"; 
     const GITHUB_USER  = "dmshopacc-a11y";                    
@@ -844,6 +844,12 @@
             let res = await fetch(`${API_URL}?t=${new Date().getTime()}`, {
                 headers: { "Authorization": `token ${GITHUB_TOKEN}` }
             });
+            
+            // ប្រសិនបើរកមិនឃើញហ្វាយ data.json (Error 404) វានឹងបង្កើត Array ទំនេរមកជំនួស
+            if (res.status === 404) {
+                return { invoices: [], sha: null };
+            }
+            
             if(!res.ok) return { invoices: [], sha: null };
             let fileData = await res.json();
             let parsedData = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
@@ -890,17 +896,23 @@
 
             let updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(invoices, null, 2))));
 
+            let requestBody = {
+                message: `🤖 Updated invoice #${invNum} via Web System`,
+                content: updatedContent
+            };
+            
+            // ប្រសិនបើមានហ្វាយចាស់ ត្រូវភ្ជាប់ SHA ទៅជាមួយទើបអាចកែបាន
+            if (sha) {
+                requestBody.sha = sha;
+            }
+
             let putRes = await fetch(API_URL, {
                 method: "PUT",
                 headers: {
                     "Authorization": `token ${GITHUB_TOKEN}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    message: `🤖 Updated invoice #${invNum} via Web System`,
-                    content: updatedContent,
-                    sha: sha
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if(putRes.ok) {
@@ -924,7 +936,7 @@
         let { invoices } = await getInvoicesFromGitHub();
         tbody.innerHTML = '';
 
-        if(invoices.length === 0) {
+        if(!invoices || invoices.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 15px;">មិនទាន់មានវិក្កយបត្របានរក្សាទុកឡើយ។</td></tr>';
             return;
         }
@@ -1052,6 +1064,12 @@
 
         let { invoices } = await getInvoicesFromGitHub();
         tbody.innerHTML = '';
+
+        if(!invoices || invoices.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 30px;">មិនទាន់មានទិន្នន័យវិក្កយបត្រឡើយ។</td></tr>';
+            document.getElementById('statementGrandTotal').innerText = '$0.00';
+            return;
+        }
 
         let filteredInvoices = invoices.filter(inv => {
             if (!inv.customer) return false;
