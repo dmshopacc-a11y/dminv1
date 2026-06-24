@@ -531,12 +531,12 @@
     let qrcodeObj = null;
 
     // -------------------------------------- //
-    // GITHUB API CONFIGURATION (UPDATED)     //
+    // GITHUB API CONFIGURATION               //
     // -------------------------------------- //
     const GITHUB_TOKEN = "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"; 
-    const GITHUB_USER  = "dmshopacc-a11y";                    
-    const GITHUB_REPO  = "dminv1";                    
-    const FILE_PATH    = "data.json";                                  
+    const GITHUB_USER = "dmshopacc-a11y";                    
+    const GITHUB_REPO = "dminv1";                    
+    const FILE_PATH = "data.json";                                  
 
     const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
 
@@ -576,7 +576,7 @@
     }
 
     function handleLogout() {
-        if(confirm("តើអ្នកពិតជាចង់លុបចាកចេញពីប្រព័ន្ធមែនទេ?")) {
+        if(confirm("តើអ្នកពិតជាចង់ចាកចេញពីប្រព័ន្ធមែនទេ?")) {
             sessionStorage.removeItem('dm_session_user');
             checkSession();
         }
@@ -608,7 +608,7 @@
 
     function updateInvoiceQR() {
         if (typeof QRCode === 'undefined') return;
-        
+
         let invNum = document.getElementById('invoiceNum').innerText.trim();
         let totalAmount = document.getElementById('grandTotal').innerText.trim();
         let qrContainer = document.getElementById('invoiceQrCode');
