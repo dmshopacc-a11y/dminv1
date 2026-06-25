@@ -541,12 +541,55 @@
     let qrcodeObj = null;
 
     // -------------------------------------- //
-    // GITHUB API CONFIGURATION               //
-    // -------------------------------------- //
-    const GITHUB_TOKEN = "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";
-    const GITHUB_USER  = "dmshopacc-a11y";                    
-    const GITHUB_REPO  = "dminv1";                    
-    const FILE_PATH    = "data.json";                                  
+    // --------------------------------- //
+// GitHub API Configuration 
+// --------------------------------- //
+const GITHUB_TOKEN = "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";
+const GITHUB_USER  = "dmshopacc-a11y";
+const GITHUB_REPO  = "dminv1";
+const FILE_PATH    = "data.json";
+
+function getApiUrl() {
+    return `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+}
+
+// មុខងារសម្រាប់រក្សាទុកទិន្នន័យទៅ GitHub ស្វ័យប្រវត្តិ
+async function saveToGitHub(jsonData) {
+    try {
+        const resGet = await fetch(getApiUrl(), {
+            method: "GET",
+            headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+        });
+        
+        let sha = "";
+        if (resGet.ok) {
+            const dataGet = await resGet.json();
+            sha = dataGet.sha;
+        }
+
+        const resPut = await fetch(getApiUrl(), {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: "Update data via system",
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(jsonData, null, 2)))),
+                sha: sha
+            })
+        });
+
+        if (resPut.ok) {
+            alert("រក្សាទុកទិន្នន័យបានជោគជ័យ! (Saved to GitHub)");
+        } else {
+            alert("មិនអាចរក្សាទុកបានទេ! សូមពិនិត្យសិទ្ធិ Token របស់អ្នក។");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅកាន់ GitHub!");
+    }
+}                                 
 
     function getApiUrl() {
         return `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
