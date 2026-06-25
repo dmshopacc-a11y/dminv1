@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ - DM Computer Shop</title>
-    <!-- Tailwind CSS (Optional but helps build strong UI framework) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kantumruuy+Pro:wght@300;400;600;700&family=Inter:wght@400;600;700&display=swap');
@@ -182,26 +181,24 @@
 </head>
 <body>
 
-    <!-- 1. LOGIN SECTION -->
     <div id="loginSection" class="login-container" style="display: block;">
         <h2 style="text-align: center; margin-bottom: 20px; color: var(--primary-color);">ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ</h2>
-        <form onsubmit="handleLogin(event)">
+        
+        <div>
             <div class="form-group">
                 <label for="loginUser">ឈ្មោះអ្នកប្រើប្រាស់</label>
-                <input type="text" id="loginUser" class="form-control" required placeholder="បញ្ចូលឈ្មោះ...">
+                <input type="text" id="loginUser" class="form-control" placeholder="បញ្ចូលឈ្មោះ..." onkeydown="if(event.key === 'Enter') handleLogin()">
             </div>
             <div class="form-group">
                 <label for="loginPass">លេខសម្ងាត់</label>
-                <input type="password" id="loginPass" class="form-control" required placeholder="បញ្ចូលលេខសម្ងាត់...">
+                <input type="password" id="loginPass" class="form-control" placeholder="បញ្ចូលលេខសម្ងាត់..." onkeydown="if(event.key === 'Enter') handleLogin()">
             </div>
-            <button type="submit" class="btn btn-success" style="width: 100%; margin-top: 10px;">ចូលប្រើប្រាស់</button>
-        </form>
+            <button class="btn btn-success" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">ចូលប្រើប្រាស់</button>
+        </div>
     </div>
 
-    <!-- 2. MAIN APPLICATION -->
     <div id="mainSystem" style="display: none;">
         
-        <!-- Top Nav Header -->
         <div class="container no-print">
             <div class="header-nav">
                 <div class="nav-tabs">
@@ -217,16 +214,13 @@
 
         <div class="container">
             
-            <!-- TAB 1: INVOICE GENERATOR -->
             <div id="invoiceTab" class="tab-content active">
                 
-                <!-- Action Controls Bar -->
                 <div class="no-print" style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                     <button class="btn btn-primary" onclick="window.print()">🖨️ បោះពុម្ភ (Print)</button>
                     <button class="btn btn-success" onclick="saveInvoiceData()">💾 រក្សាទុកទៅ Cloud (GitHub)</button>
                 </div>
 
-                <!-- Printable Invoice Layout -->
                 <div class="invoice-card" id="invoicePrintArea">
                     <div class="invoice-header">
                         <div class="shop-info">
@@ -241,7 +235,6 @@
                         </div>
                     </div>
 
-                    <!-- Customer Profile Meta -->
                     <div style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 6px;">
                         <table style="width: 100%; border: none; margin: 0;">
                             <tr style="border: none;">
@@ -251,14 +244,13 @@
                         </table>
                     </div>
 
-                    <!-- Items Dynamic Table -->
                     <table id="invoiceTable">
                         <thead>
                             <tr>
                                 <th class="text-center" style="width: 50px;">ល.រ</th>
                                 <th>បរិយាយមុខទំនិញ (Description)</th>
                                 <th class="text-center" style="width: 100px;">ចំនួន (Qty)</th>
-                                <th class="text-right" style="width: 14px0px;">តម្លៃរាយ (Price)</th>
+                                <th class="text-right" style="width: 140px;">តម្លៃរាយ (Price)</th>
                                 <th class="text-right" style="width: 140px;">សរុប (Amount)</th>
                                 <th class="text-center no-print" style="width: 70px;">សកម្មភាព</th>
                             </tr>
@@ -280,12 +272,10 @@
                         </tbody>
                     </table>
 
-                    <!-- Row Action For Interactive -->
                     <div class="no-print" style="margin-bottom: 20px;">
                         <button class="btn btn-primary" style="padding: 6px 12px; font-size: 14px;" onclick="addRow()">➕ បន្ថែមជួរថ្មី</button>
                     </div>
 
-                    <!-- Total Amount & Signature Footer Summary -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px;">
                         <div id="invoiceQrCode"></div>
                         <div style="width: 300px;">
@@ -297,7 +287,6 @@
                     </div>
                 </div>
 
-                <!-- Product Inventory Setup Panel (Inside Dynamic DB memory) -->
                 <div class="invoice-card no-print" style="background: #fdfdfd; border: 1px dashed #cbd5e0;">
                     <h3 style="margin-top: 0; color: var(--primary-color);">📦 គ្រប់គ្រងបញ្ជីផលិតផលរហ័ស (Memory DB)</h3>
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -314,7 +303,6 @@
                     <div id="dbProductContainer"></div>
                 </div>
 
-                <!-- Live Cloud Sync History Table -->
                 <div class="invoice-card no-print">
                     <h3 style="margin-top:0;">📜 ប្រវត្តិកាលរក្សាទុកវិក្កយបត្រ (Cloud Server History)</h3>
                     <table>
@@ -329,14 +317,12 @@
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
-                            <!-- Populated dynamically -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
 
             </div>
 
-            <!-- TAB 2: STATEMENT OVERVIEW REPORT -->
             <div id="statementTab" class="tab-content">
                 <div class="invoice-card">
                     <div style="text-align: center; margin-bottom: 30px;">
@@ -357,8 +343,7 @@
                             </tr>
                         </thead>
                         <tbody id="statementBody">
-                            <!-- Populated dynamically via fetch cloud -->
-                        </tbody>
+                            </tbody>
                     </table>
 
                     <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
@@ -375,7 +360,6 @@
         </div>
     </div>
 
-    <!-- 3. MAIN JAVASCRIPT SYSTEM LOGIC -->
     <script>
         let qrcodeObj = null;
 
@@ -394,15 +378,16 @@
         // -------------------------------------- //
         // JAVASCRIPT AUTHENTICATION LOGIC        //
         // -------------------------------------- //
-        function handleLogin(e) {
-            if(e) e.preventDefault();
+        
+        // បានកែប្រែ: លែងត្រូវការ e.preventDefault() ព្រោះយើងលែងប្រើ <form>
+        function handleLogin() {
             let user = document.getElementById('loginUser').value.trim();
             let pass = document.getElementById('loginPass').value;
 
             if (user === 'dm' && pass === 'K@llasero097') {
                 sessionStorage.setItem('dm_session_user', 'dm');
                 showMainSystem();
-                alert("ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ!");
+                // alert("ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ!");
             } else {
                 alert("ឈ្មោះអ្នកប្រើប្រាស់ ឬ លេខសម្ងាត់មិនត្រឹមត្រូវឡើយ!");
             }
