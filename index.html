@@ -546,31 +546,35 @@
     // JAVASCRIPT AUTHENTICATION LOGIC        //
     // -------------------------------------- //
     function handleLogin(e) {
-        e.preventDefault();
+        if(e) e.preventDefault();
         let user = document.getElementById('loginUser').value.trim();
         let pass = document.getElementById('loginPass').value;
 
         if (user === 'dm' && pass === 'K@llasero097') {
             sessionStorage.setItem('dm_session_user', 'dm');
-            checkSession();
+            showMainSystem();
             alert("ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ!");
         } else {
             alert("ឈ្មោះអ្នកប្រើប្រាស់ ឬ លេខសម្ងាត់មិនត្រឹមត្រូវឡើយ!");
         }
     }
 
+    function showMainSystem() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('mainSystem').style.display = 'block';
+        document.getElementById('currentUserLabel').innerText = 'dm';
+        
+        generateInvoiceDetails();
+        updateProductDropdowns();
+        renderProductDBList();
+        renderInvoiceHistory();
+        calculateTotal();
+    }
+
     function checkSession() {
         let sessionUser = sessionStorage.getItem('dm_session_user');
         if(sessionUser === 'dm') {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('mainSystem').style.display = 'block';
-            document.getElementById('currentUserLabel').innerText = sessionUser;
-            
-            generateInvoiceDetails();
-            updateProductDropdowns();
-            renderProductDBList();
-            renderInvoiceHistory();
-            calculateTotal();
+            showMainSystem();
         } else {
             document.getElementById('loginSection').style.display = 'block';
             document.getElementById('mainSystem').style.display = 'none';
@@ -580,12 +584,14 @@
     function handleLogout() {
         if(confirm("តើអ្នកពិតជាចង់លុបចាកចេញពីប្រព័ន្ធមែនទេ?")) {
             sessionStorage.removeItem('dm_session_user');
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
             checkSession();
         }
     }
 
     // -------------------------------------- //
-    // ORIGINAL INVOICE SYSTEM LOGIC CODE    //
+    // INVOICE SYSTEM LOGIC CODE              //
     // -------------------------------------- //
     const defaultProducts = [
         { name: "HP CE410A Black LaserJet Toner Cartridge", price: 35.00, category: "Color Inks & Toners" },
@@ -838,7 +844,7 @@
     }
 
     // -------------------------------------- //
-    // GITHUB SYNC LOGIC (FIXED & UNICODE)    //
+    // GITHUB SYNC LOGIC                      //
     // -------------------------------------- //
     function decodeBase64GitHub(content) {
         return JSON.parse(decodeURIComponent(escape(atob(content.replace(/\s/g, '')))));
@@ -918,7 +924,7 @@
                 resetInvoiceForm();
             } else {
                 let errData = await putRes.json();
-                alert("🔴 ရក្សាទុកបរាជ័យ៖ " + errData.message);
+                alert("🔴 រក្សាទុកបរាជ័យ៖ " + errData.message);
             }
         } catch (error) {
             alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅ GitHub: " + error.message);
@@ -976,7 +982,7 @@
                         '<div class="item-text-print">' + (item.productName || "—") + '</div>' +
                         '<select class="item-select" onchange="onProductSelect(this)">' +
                             '<option value="" data-price="0.00">-- ជ្រើសរើសទំនិញ --</option>' +
-                        '</select>' +
+                        </select>' +
                     '</td>' +
                     '<td class="text-center"><input type="number" class="qty-input" value="' + item.qty + '" oninput="calculateTotal()"></td>' +
                     '<td class="text-right"><input type="number" class="price-input" value="' + item.price + '" step="0.01" oninput="calculateTotal()"></td>' +
