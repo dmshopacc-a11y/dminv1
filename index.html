@@ -53,12 +53,6 @@
             outline: none;
             border-color: #2e86de;
         }
-        .token-hint {
-            font-size: 11px;
-            color: #e67e22;
-            margin-top: -5px;
-            line-height: 1.4;
-        }
         .btn-auth {
             background-color: #2e86de;
             color: white;
@@ -318,17 +312,13 @@
 <body>
 
 <div id="loginSection" class="auth-container">
-    <h2>🔑 ចូលប្រើប្រាស់ប្រព័ន្ធ</h2>
+    <h2>🔑  ចូលប្រើប្រាស់ប្រព័ន្ធ</h2>
     <form class="auth-form" onsubmit="handleLogin(event)">
         <label>ឈ្មោះអ្នកប្រើប្រាស់ (Username)</label>
         <input type="text" id="loginUser" required placeholder="បញ្ចូល Username...">
         
         <label>លេខសម្ងាត់ (Password)</label>
         <input type="password" id="loginPass" required placeholder="បញ្ចូល លេខសម្ងាត់...">
-        
-        <label style="color: #2e86de;">🔑 GitHub Access Token (Classic)</label>
-        <input type="password" id="loginToken" required placeholder="បិទភ្ជាប់លេខ ghp_... ថ្មីរបស់អ្នកនៅទីនេះ">
-        <div class="token-hint">* សម្គាល់៖ ការបំពេញ Token ត្រង់នេះជួយការពារកុំឱ្យប្រព័ន្ធ GitHub ប្លុកលេខកូដរបស់អ្នកចោល។</div>
         
         <button type="submit" class="btn-auth">ឡូកអ៊ីន (Login)</button>
     </form>
@@ -448,7 +438,7 @@
                     </tr>
                 </thead>
                 <tbody id="historyTableBody">
-                    </tbody>
+                </tbody>
             </table>
         </div>
 
@@ -540,63 +530,16 @@
 <script>
     let qrcodeObj = null;
 
-    // -------------------------------------- //
     // --------------------------------- //
-// GitHub API Configuration 
-// --------------------------------- //
-const GITHUB_TOKEN = "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";
-const GITHUB_USER  = "dmshopacc-a11y";
-const GITHUB_REPO  = "dminv1";
-const FILE_PATH    = "data.json";
-
-function getApiUrl() {
-    return `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
-}
-
-// មុខងារសម្រាប់រក្សាទុកទិន្នន័យទៅ GitHub ស្វ័យប្រវត្តិ
-async function saveToGitHub(jsonData) {
-    try {
-        const resGet = await fetch(getApiUrl(), {
-            method: "GET",
-            headers: { "Authorization": `token ${GITHUB_TOKEN}` }
-        });
-        
-        let sha = "";
-        if (resGet.ok) {
-            const dataGet = await resGet.json();
-            sha = dataGet.sha;
-        }
-
-        const resPut = await fetch(getApiUrl(), {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${GITHUB_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: "Update data via system",
-                content: btoa(unescape(encodeURIComponent(JSON.stringify(jsonData, null, 2)))),
-                sha: sha
-            })
-        });
-
-        if (resPut.ok) {
-            alert("រក្សាទុកទិន្នន័យបានជោគជ័យ! (Saved to GitHub)");
-        } else {
-            alert("មិនអាចរក្សាទុកបានទេ! សូមពិនិត្យសិទ្ធិ Token របស់អ្នក។");
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅកាន់ GitHub!");
-    }
-}                                 
+    // GitHub API Configuration          //
+    // --------------------------------- //
+    const GITHUB_TOKEN = "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";
+    const GITHUB_USER  = "dmshopacc-a11y";
+    const GITHUB_REPO  = "dminv1";
+    const FILE_PATH    = "data.json";
 
     function getApiUrl() {
         return `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
-    }
-
-    function getActiveToken() {
-        return sessionStorage.getItem('dm_github_token') || "";
     }
 
     // -------------------------------------- //
@@ -606,15 +549,9 @@ async function saveToGitHub(jsonData) {
         e.preventDefault();
         let user = document.getElementById('loginUser').value.trim();
         let pass = document.getElementById('loginPass').value;
-        let token = document.getElementById('loginToken').value.trim();
 
         if (user === 'dm' && pass === 'K@llasero097') {
-            if(!token.startsWith("ghp_")) {
-                alert("សូមពិនិត្យមើលឡើងវិញ! GitHub Token ត្រូវតែចាប់ផ្ដើមដោយអក្សរ ghp_");
-                return;
-            }
             sessionStorage.setItem('dm_session_user', 'dm');
-            sessionStorage.setItem('dm_github_token', token);
             checkSession();
             alert("ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រងវិក្កយបត្រ!");
         } else {
@@ -624,9 +561,7 @@ async function saveToGitHub(jsonData) {
 
     function checkSession() {
         let sessionUser = sessionStorage.getItem('dm_session_user');
-        let token = getActiveToken();
-
-        if(sessionUser === 'dm' && token) {
+        if(sessionUser === 'dm') {
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('mainSystem').style.display = 'block';
             document.getElementById('currentUserLabel').innerText = sessionUser;
@@ -644,7 +579,7 @@ async function saveToGitHub(jsonData) {
 
     function handleLogout() {
         if(confirm("តើអ្នកពិតជាចង់លុបចាកចេញពីប្រព័ន្ធមែនទេ?")) {
-            sessionStorage.clear();
+            sessionStorage.removeItem('dm_session_user');
             checkSession();
         }
     }
@@ -718,6 +653,10 @@ async function saveToGitHub(jsonData) {
         setTimeout(updateInvoiceQR, 200);
     }
 
+    window.onload = function() {
+        checkSession();
+    };
+
     function switchTab(tabId) {
         document.getElementById('invoiceTab').classList.remove('active');
         document.getElementById('statementTab').classList.remove('active');
@@ -760,455 +699,4 @@ async function saveToGitHub(jsonData) {
             groups[cat].push(p);
         });
         
-        dropdowns.forEach(select => {
-            let currentValue = select.value;
-            select.innerHTML = '<option value="" data-price="0.00">-- ជ្រើសរើសទំនិញ --</option>';
-            
-            for(let cat in groups) {
-                let optGroup = document.createElement('optgroup');
-                optGroup.label = '📦 ' + cat;
-                
-                groups[cat].forEach(prod => {
-                    let opt = document.createElement('option');
-                    opt.value = prod.name;
-                    opt.setAttribute('data-price', prod.price);
-                    opt.innerText = prod.name + ' ($' + parseFloat(prod.price).toFixed(2) + ')';
-                    if(prod.name === currentValue) {
-                        opt.selected = true;
-                    }
-                    optGroup.appendChild(opt);
-                });
-                select.appendChild(optGroup);
-            }
-        });
-    }
-
-    function renderProductDBList() {
-        let products = getProductDB();
-        let container = document.getElementById('dbProductContainer');
-        if(!container) return;
-        container.innerHTML = '';
-        
-        let groups = {};
-        products.forEach((p, idx) => {
-            let cat = p.category || "Other Service";
-            if(!groups[cat]) groups[cat] = [];
-            groups[cat].push({ prod: p, globalIndex: idx });
-        });
-
-        for(let cat in groups) {
-            let sec = document.createElement('div');
-            sec.className = 'cat-section';
-            sec.innerHTML = '<div class="cat-title">📁 ' + cat + '</div>';
-            
-            let tagList = document.createElement('div');
-            tagList.className = 'product-tag-list';
-            
-            groups[cat].forEach(item => {
-                let tag = document.createElement('div');
-                tag.className = 'product-tag';
-                tag.innerHTML = item.prod.name + ' <span>$' + parseFloat(item.prod.price).toFixed(2) + '</span>' +
-                                '<button class="btn-tag-del" onclick="deleteProductFromDB(' + item.globalIndex + ')">×</button>';
-                tagList.appendChild(tag);
-            });
-            
-            sec.appendChild(tagList);
-            container.appendChild(sec);
-        }
-    }
-
-    function addNewProductToDB() {
-        let nameInput = document.getElementById('dbProdName');
-        let priceInput = document.getElementById('dbProdPrice');
-        let catSelect = document.getElementById('dbProdCat');
-        
-        let name = nameInput.value.trim();
-        let price = parseFloat(priceInput.value) || 0;
-        let cat = catSelect.value;
-        
-        if(!name) return alert("សូមបញ្ចូលឈ្មោះទំនិញ!");
-        if(price <= 0) return alert("សូមបញ្ចូលតម្លៃទំនិញឱ្យបានត្រឹមត្រូវ!");
-        
-        let products = getProductDB();
-        products.push({ name: name, price: price, category: cat });
-        
-        localStorage.setItem('dm_products_v4', JSON.stringify(products));
-        
-        nameInput.value = '';
-        priceInput.value = '';
-        
-        alert("បានបន្ថែមទំនិញទៅក្នុងក្រុម «" + cat + "» ជោគជ័យ!");
-        updateProductDropdowns();
-        renderProductDBList();
-    }
-
-    function deleteProductFromDB(index) {
-        let products = getProductDB();
-        if(confirm("តើអ្នកចង់លុបទំនិញនេះចេញពីប្រព័ន្ធចងចាំមែនទេ?")) {
-            products.splice(index, 1);
-            localStorage.setItem('dm_products_v4', JSON.stringify(products));
-            updateProductDropdowns();
-            renderProductDBList();
-        }
-    }
-
-    function addRow() {
-        let table = document.getElementById("invoiceTable").getElementsByTagName('tbody')[0];
-        let rowCount = table.rows.length;
-        let newRow = table.insertRow(rowCount);
-        newRow.className = "item-row";
-        
-        newRow.innerHTML = '<td class="text-center row-number">' + (rowCount + 1) + '</td>' +
-            '<td>' +
-                '<div class="item-text-print">—</div>' +
-                '<select class="item-select" onchange="onProductSelect(this)">' +
-                    '<option value="" data-price="0.00">-- ជ្រើសរើសទំនិញ --</option>' +
-                '</select>' +
-            '</td>' +
-            '<td class="text-center"><input type="number" class="qty-input" value="1" oninput="calculateTotal()"></td>' +
-            '<td class="text-right"><input type="number" class="price-input" value="0.00" step="0.01" oninput="calculateTotal()"></td>' +
-            '<td class="text-right total-price">$0.00</td>' +
-            '<td class="text-center"><button class="btn-delete" onclick="deleteRow(this)">លុប</button></td>';
-        updateProductDropdowns();
-        calculateTotal();
-    }
-
-    function deleteRow(button) {
-        button.parentNode.parentNode.remove();
-        let rows = document.querySelectorAll('.row-number');
-        rows.forEach((row, idx) => row.innerText = idx + 1);
-        calculateTotal();
-    }
-
-    function calculateTotal() {
-        let rows = document.querySelectorAll('.item-row');
-        let totalAmount = 0;
-        rows.forEach(row => {
-            let qty = parseFloat(row.querySelector('.qty-input').value) || 0;
-            let price = parseFloat(row.querySelector('.price-input').value) || 0;
-            let total = qty * price;
-            row.querySelector('.total-price').innerText = '$' + total.toFixed(2);
-            totalAmount += total;
-        });
-        
-        let grandTotalEl = document.getElementById('grandTotal');
-        if(grandTotalEl) {
-            grandTotalEl.innerText = '$' + totalAmount.toFixed(2);
-        }
-        
-        updateInvoiceQR(); 
-    }
-
-    // -------------------------------------- //
-    // GITHUB INTERACTION FUNCTIONS           //
-    // -------------------------------------- //
-    function decodeBase64GitHub(content) {
-        return JSON.parse(decodeURIComponent(escape(atob(content.replace(/\s/g, '')))));
-    }
-
-    function encodeBase64GitHub(obj) {
-        return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
-    }
-
-    async function getInvoicesFromGitHub() {
-        let token = getActiveToken();
-        try {
-            let res = await fetch(`${getApiUrl()}?t=${new Date().getTime()}`, {
-                headers: { "Authorization": `token ${token}` }
-            });
-            
-            if (res.status === 404) {
-                return { invoices: [], sha: null };
-            }
-            
-            if(!res.ok) {
-                if(res.status === 401 || res.status === 403) {
-                    alert("🔴 ព័ត៌មានកំហុស៖ លេខ GitHub Token របស់អ្នកមិនត្រឹមត្រូវ ហួសកំណត់ ឬត្រូវបានប្លុកហើយ! សូមបង្កើត Token ថ្មីមកដាក់។");
-                }
-                return { invoices: [], sha: null };
-            }
-            let fileData = await res.json();
-            let parsedData = decodeBase64GitHub(fileData.content);
-            return { invoices: parsedData, sha: fileData.sha };
-        } catch (error) {
-            console.error("Error fetching from GitHub:", error);
-            return { invoices: [], sha: null };
-        }
-    }
-
-    async function saveInvoiceData() {
-        let token = getActiveToken();
-        let invNum = document.getElementById('invoiceNum').innerText.trim();
-        let invDate = document.getElementById('currentDate').innerText;
-        let amount = document.getElementById('grandTotal').innerText.replace('$', '');
-
-        if(!invNum) return alert("គ្មានលេខវិក្កយបត្រ!");
-
-        let rows = document.querySelectorAll('.item-row');
-        let itemsSaved = [];
-        rows.forEach(row => {
-            let select = row.querySelector('.item-select');
-            let qty = row.querySelector('.qty-input').value;
-            let price = row.querySelector('.price-input').value;
-            itemsSaved.push({ productName: select.value, qty: qty, price: price });
-        });
-
-        let invoiceData = { 
-            invoiceNum: invNum, 
-            date: invDate, 
-            customer: "TRIPOS INTERNATIONAL CO.LTD", 
-            total: parseFloat(amount),
-            items: itemsSaved
-        };
-
-        try {
-            let { invoices, sha } = await getInvoicesFromGitHub();
-            let existingIndex = invoices.findIndex(inv => inv.invoiceNum.toString() === invNum.toString());
-            
-            if(existingIndex > -1) {
-                invoices[existingIndex] = invoiceData;
-            } else {
-                invoices.push(invoiceData);
-            }
-
-            let updatedContent = encodeBase64GitHub(invoices);
-
-            let requestBody = {
-                message: `🤖 Updated invoice #${invNum} via Web System`,
-                content: updatedContent
-            };
-            
-            if (sha) {
-                requestBody.sha = sha;
-            }
-
-            let putRes = await fetch(getApiUrl(), {
-                method: "PUT",
-                headers: {
-                    "Authorization": `token ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-            if(putRes.ok) {
-                alert("💾 រក្សាទុកវិក្កយបត្រលេខ #" + invNum + " ទៅកាន់ GitHub រួចរាល់!");
-                await renderInvoiceHistory();
-                resetInvoiceForm();
-            } else {
-                let errData = await putRes.json();
-                alert("🔴 រក្សាទុកបរាជ័យ៖ " + errData.message + " (Code: " + putRes.status + ")");
-            }
-        } catch (error) {
-            alert("មានបញ្ហាក្នុងការតភ្ជាប់ទៅ GitHub: " + error.message);
-        }
-    }
-
-    async function renderInvoiceHistory() {
-        let tbody = document.getElementById('historyTableBody');
-        if(!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #666; padding: 15px;">កំពុងទាញទិន្នន័យពី GitHub...</td></tr>';
-
-        let { invoices } = await getInvoicesFromGitHub();
-        tbody.innerHTML = '';
-
-        if(!invoices || invoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 15px;">មិនទាន់មានវិក្កយបត្របានរក្សាទុកឡើយ។</td></tr>';
-            return;
-        }
-
-        let displayList = [...invoices].reverse();
-
-        displayList.forEach((inv, index) => {
-            let row = document.createElement('tr');
-            row.innerHTML = '<td class="text-center">' + (index + 1) + '</td>' +
-                '<td class="text-center">' + inv.date + '</td>' +
-                '<td class="text-center" style="font-weight: bold; color: #ff9f43;">#' + inv.invoiceNum + '</td>' +
-                '<td>' + (inv.customer || "TRIPOS INTERNATIONAL CO.LTD") + '</td>' +
-                '<td class="text-right" style="font-weight: bold; color: #10ac84;">$' + inv.total.toFixed(2) + '</td>' +
-                '<td class="text-center">' +
-                    '<button class="btn-view" onclick="viewSavedInvoice(\'' + inv.invoiceNum + '\')">👁️ បើកមើល</button>' +
-                    '<button class="btn-danger" style="padding: 5px 10px;" onclick="deleteInvoiceFromHistory(\'' + inv.invoiceNum + '\')">លុប</button>' +
-                '</td>';
-            tbody.appendChild(row);
-        });
-    }
-
-    async function viewSavedInvoice(invNum) {
-        let { invoices } = await getInvoicesFromGitHub();
-        let inv = invoices.find(item => item.invoiceNum.toString() === invNum.toString());
-        
-        if(!inv) return alert("រកមិនឃើញវិក្កយបត្រនេះទេ!");
-
-        document.getElementById('invoiceNum').innerText = inv.invoiceNum;
-        document.getElementById('currentDate').innerText = inv.date;
-
-        let tableBody = document.getElementById("invoiceTable").getElementsByTagName('tbody')[0];
-        tableBody.innerHTML = ''; 
-
-        if(inv.items && inv.items.length > 0) {
-            inv.items.forEach((item, idx) => {
-                let row = tableBody.insertRow(idx);
-                row.className = "item-row";
-                row.innerHTML = '<td class="text-center row-number">' + (idx + 1) + '</td>' +
-                    '<td>' +
-                        '<div class="item-text-print">' + (item.productName || "—") + '</div>' +
-                        '<select class="item-select" onchange="onProductSelect(this)">' +
-                            '<option value="" data-price="0.00">-- ជ្រើសរើសទំនិញ --</option>' +
-                        '</select>' +
-                    '</td>' +
-                    '<td class="text-center"><input type="number" class="qty-input" value="' + item.qty + '" oninput="calculateTotal()"></td>' +
-                    '<td class="text-right"><input type="number" class="price-input" value="' + item.price + '" step="0.01" oninput="calculateTotal()"></td>' +
-                    '<td class="text-right total-price">$0.00</td>' +
-                    '<td class="text-center"><button class="btn-delete" onclick="deleteRow(this)">លុប</button></td>';
-                
-                let select = row.querySelector('.item-select');
-                updateProductDropdowns(); 
-                select.value = item.productName; 
-            });
-        } else {
-            addRow();
-        }
-
-        calculateTotal();
-        window.scrollTo({ top: 0, behavior: 'smooth' }); 
-        alert("បានទាញយកវិក្កយបត្រលេខ #" + invNum + " ពី GitHub មកបង្ហាញជោគជ័យ!");
-    }
-
-    async function deleteInvoiceFromHistory(invNum) {
-        if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះចេញពី GitHub មែនទេ?")) {
-            try {
-                let token = getActiveToken();
-                let { invoices, sha } = await getInvoicesFromGitHub();
-                invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
-
-                let updatedContent = encodeBase64GitHub(invoices);
-
-                let putRes = await fetch(getApiUrl(), {
-                    method: "PUT",
-                    headers: {
-                        "Authorization": `token ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        message: `🤖 Deleted invoice #${invNum} via Web System`,
-                        content: updatedContent,
-                        sha: sha
-                    })
-                });
-
-                if(putRes.ok) {
-                    alert("បានលុបវិក្កយបត្រជោគជ័យ!");
-                    await renderInvoiceHistory();
-                    if(document.getElementById('invoiceNum').innerText === invNum) {
-                        resetInvoiceForm();
-                    }
-                } else {
-                    alert("ការលុបបរាជ័យ!");
-                }
-            } catch (error) {
-                alert("មានបញ្ហា៖ " + error.message);
-            }
-        }
-    }
-
-    function resetInvoiceForm() {
-        let tableBody = document.getElementById("invoiceTable").getElementsByTagName('tbody')[0];
-        tableBody.innerHTML = '<tr class="item-row">' +
-                '<td class="text-center row-number">1</td>' +
-                '<td>' +
-                    '<div class="item-text-print">—</div>' +
-                    '<select class="item-select" onchange="onProductSelect(this)">' +
-                        '<option value="" data-price="0.00">-- ជ្រើសរើសទំនិញ --</option>' +
-                    '</select>' +
-                '</td>' +
-                '<td class="text-center"><input type="number" class="qty-input" value="1" oninput="calculateTotal()"></td>' +
-                '<td class="text-right"><input type="number" class="price-input" value="0.00" step="0.01" oninput="calculateTotal()"></td>' +
-                '<td class="text-right total-price">$0.00</td>' +
-                '<td class="text-center"><button class="btn-delete" onclick="deleteRow(this)">លុប</button></td>' +
-            '</tr>';
-        generateInvoiceDetails(); 
-        updateProductDropdowns();
-        calculateTotal();
-    }
-
-    async function loadStatement() {
-        let tbody = document.getElementById('statementBody');
-        if(!tbody) return;
-        
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #666; padding: 15px;">កំពុងទាញទិន្នន័យរបាយការណ៍...</td></tr>';
-        let grandTotal = 0;
-
-        let { invoices } = await getInvoicesFromGitHub();
-        tbody.innerHTML = '';
-
-        if(!invoices || invoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 30px;">មិនទាន់មានទិន្នន័យវិក្កយបត្រឡើយ។</td></tr>';
-            document.getElementById('statementGrandTotal').innerText = '$0.00';
-            return;
-        }
-
-        let filteredInvoices = invoices.filter(inv => {
-            if (!inv.customer) return false;
-            let name = inv.customer.toUpperCase().replace(/[\s,.]/g, "");
-            return name.includes("TRIPOS");
-        });
-
-        if(filteredInvoices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color: #999; padding: 30px;">មិនទាន់មានទិន្នន័យវិក្កយបត្រសម្រាប់ TRIPOS ឡើយ។</td></tr>';
-            document.getElementById('statementGrandTotal').innerText = '$0.00';
-            return;
-        }
-
-        filteredInvoices.forEach((inv, index) => {
-            let row = document.createElement('tr');
-            row.innerHTML = '<td class="text-center">' + (index + 1) + '</td>' +
-                '<td class="text-center">' + inv.date + '</td>' +
-                '<td class="text-center" style="font-weight: bold; color: #2e86de;">' + inv.invoiceNum + '</td>' +
-                '<td>TRIPOS INTERNATIONAL CO.LTD</td>' +
-                '<td class="text-right" style="font-weight: bold;">$' + inv.total.toFixed(2) + '</td>' +
-                '<td class="text-center action-col"><button class="btn-danger" onclick="deleteStatementRow(\'' + inv.invoiceNum + '\')">លុប</button></td>';
-            tbody.appendChild(row);
-            grandTotal += inv.total;
-        });
-
-        document.getElementById('statementGrandTotal').innerText = '$' + grandTotal.toFixed(2);
-    }
-
-    async function deleteStatementRow(invNum) {
-        if(confirm("តើអ្នកពិតជាចង់លុបវិក្កយបត្រលេខ #" + invNum + " នេះមែនទេ?")) {
-            try {
-                let token = getActiveToken();
-                let { invoices, sha } = await getInvoicesFromGitHub();
-                invoices = invoices.filter(inv => inv.invoiceNum.toString() !== invNum.toString());
-
-                let updatedContent = encodeBase64GitHub(invoices);
-
-                let putRes = await fetch(getApiUrl(), {
-                    method: "PUT",
-                    headers: {
-                        "Authorization": `token ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        message: `🤖 Deleted invoice #${invNum} via Statement Tab`,
-                        content: updatedContent,
-                        sha: sha
-                    })
-                });
-
-                if(putRes.ok) {
-                    alert("បានលុបចេញពីប្រព័ន្ធជោគជ័យ!");
-                    await loadStatement();
-                } else {
-                    alert("ប្រតិបត្តិការបរាជ័យ!");
-                }
-            } catch (error) {
-                alert("មានបញ្ហា៖ " + error.message);
-            }
-        }
-    }
-</script>
-
-</body>
-</html>
+        dropdowns
